@@ -23,7 +23,7 @@ app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME', '')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_SENDER', 'aryan.stark0325@gmail.com')
 # ── Platform fee config ──
 PLATFORM_FEE_PERCENT = 10  # platform keeps 10% of rental amount
 PLATFORM_UPI_ID = "9955985803@axl"  # your personal UPI ID here
@@ -122,9 +122,13 @@ def register():
                           recipients=[email])
             msg.body = f'Hi {name},\n\nYour OTP is: {otp}\n\nDo not share it.\n\n— Team Rentify'
 
-            def send_async_email(app, msg):
-                with app.app_context():
-                    mail.send(msg)
+def send_async_email(app, msg):
+    with app.app_context():
+        try:
+            mail.send(msg)
+            app.logger.info('Email sent successfully')
+        except Exception as e:
+            app.logger.error(f'Async mail error: {e}')
 
             thread = threading.Thread(target=send_async_email, args=(app, msg))
             thread.start()
