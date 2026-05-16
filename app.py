@@ -24,6 +24,7 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 PLATFORM_FEE_PERCENT = 10  # platform keeps 10% of rental amount
 PLATFORM_UPI_ID = "9955985803@axl"  # your personal UPI ID here
 PLATFORM_NAME = "Rentify"
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
 ADMIN_EMAIL = "aryan.stark0325@gmail.com"
 
 db.init_app(app)
