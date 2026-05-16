@@ -1,3 +1,4 @@
+import threading
 from dotenv import load_dotenv
 load_dotenv()
 from flask_mail import Mail, Message
@@ -119,21 +120,20 @@ def register():
         try:
             msg = Message('Rentify — Verify your email',
                           recipients=[email])
-            msg.body = f'''Hi {name},
+            msg.body = f'Hi {name},\n\nYour OTP is: {otp}\n\nDo not share it.\n\n— Team Rentify'
 
-Your OTP to verify your Rentify account is:
+            def send_async_email(app, msg):
+                with app.app_context():
+                    mail.send(msg)
 
-{otp}
+            thread = threading.Thread(target=send_async_email, args=(app, msg))
+            thread.start()
 
-This OTP is valid for this session only.
-Do not share it with anyone.
-
-— Team Rentify'''
-            mail.send(msg)
             flash('OTP sent to your email. Please verify.')
             return redirect(url_for('verify_otp', email=email))
         except Exception as e:
-            flash('Could not send OTP. Check your email and try again.')
+            app.logger.error(f'Mail error: {e}')
+            flash('Could not send OTP. Please try again.')
             return redirect(url_for('register'))
 
     return render_template('register.html')
