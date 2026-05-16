@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h3 class="mb-4">Complete Payment</h3>
+
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white fw-bold">Booking Summary</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="ps-3">Item</td>
+                        <td><strong>{{ booking.listing.title }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3">Duration</td>
+                        <td>{{ days }} day(s)
+                            <span class="text-muted small">
+                            ({{ booking.start_date.strftime('%d %b') }} →
+                            {{ booking.end_date.strftime('%d %b %Y') }})
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3">Rental amount</td>
+                        <td>₹{{ booking.rental_amount }}</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3">Security deposit</td>
+                        <td>₹{{ booking.listing.deposit }}
+                            <span class="text-muted small">(refundable)</span>
+                        </td>
+                    </tr>
+                    <tr class="table-warning">
+                        <td class="ps-3">Platform fee
+                            <span class="badge bg-warning text-dark">{{ platform_fee_percent }}%</span>
+                        </td>
+                        <td>₹{{ booking.platform_fee }}
+                            <span class="text-muted small">(included)</span>
+                        </td>
+                    </tr>
+                    <tr class="table-dark">
+                        <td class="ps-3"><strong>Total to pay</strong></td>
+                        <td><strong>₹{{ booking.total_cost }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="alert alert-info small mb-4">
+            <strong>How it works:</strong><br>
+            1. You pay ₹{{ booking.total_cost }} to <strong>{{ platform_name }}</strong><br>
+            2. Lender receives ₹{{ booking.lender_payout }} after safe return<br>
+            3. Deposit of ₹{{ booking.listing.deposit }} refunded after return<br>
+            4. {{ platform_name }} keeps ₹{{ booking.platform_fee }} as platform fee
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white fw-bold">
+                Pay ₹{{ booking.total_cost }} to {{ platform_name }}
+            </div>
+            <div class="card-body text-center">
+                <p class="text-muted small mb-1">Scan with GPay, PhonePe, Paytm, BHIM</p>
+                <h5 class="mb-3">{{ platform_upi }}</h5>
+
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa={{ platform_upi }}&pn={{ platform_name }}&am={{ booking.total_cost }}&tn=Rentify-{{ booking.id }}"
+                     class="img-fluid rounded shadow mb-3"
+                     style="max-width:220px;">
+
+                <a href="upi://pay?pa={{ platform_upi }}&pn={{ platform_name }}&am={{ booking.total_cost }}&tn=Rentify-{{ booking.id }}"
+                   class="btn btn-outline-dark btn-sm">
+                    Open in UPI App
+                </a>
+
+                <p class="text-muted small mt-2">
+                    Ref: Rentify-{{ booking.id }}
+                </p>
+            </div>
+        </div>
+
+        <div class="card border-success mb-3">
+            <div class="card-body">
+                <p class="small text-muted mb-3">
+                    After paying, click below to confirm. 
+                    You can then pick up your item from the lender.
+                </p>
+                <form method="POST"
+                      action="{{ url_for('confirm_payment', booking_id=booking.id) }}">
+                    <button type="submit" class="btn btn-success w-100"
+                            onclick="return confirm('Confirm you have paid ₹{{ booking.total_cost }}?')">
+                        ✓ I have paid — Confirm Booking
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary w-100">
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+
+{% endblock %}

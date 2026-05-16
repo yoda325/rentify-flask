@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- Search + Filter Bar -->
+<form method="GET" action="/" class="mb-4">
+    <div class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <input type="text" name="q" class="form-control"
+                   placeholder="Search items..." value="{{ query }}">
+        </div>
+        <div class="col-md-3">
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                {% for cat, count in category_counts.items() %}
+                <option value="{{ cat }}" {{ 'selected' if category == cat }}>
+                    {{ cat }} ({{ count }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="sort" class="form-select">
+                <option value="newest" {{ 'selected' if sort_by == 'newest' }}>Newest</option>
+                <option value="price_low" {{ 'selected' if sort_by == 'price_low' }}>Price: Low to High</option>
+                <option value="price_high" {{ 'selected' if sort_by == 'price_high' }}>Price: High to Low</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-dark w-100">Search</button>
+        </div>
+    </div>
+</form>
+
+<!-- Results count -->
+<p class="text-muted mb-3">{{ listings|length }} item(s) found</p>
+
+{% if listings %}
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for item in listings %}
+    <div class="col">
+        <div class="card h-100 shadow-sm">
+            {% if item.image_file and item.image_file != 'default.jpg' %}
+                <img src="{{ url_for('static', filename='uploads/' + item.image_file) }}"
+                     class="card-img-top"
+                     style="height:200px; object-fit:cover;">
+            {% else %}
+                <div style="height:200px; background:#f0f0f0; display:flex;
+                            align-items:center; justify-content:center;">
+                    <span class="text-muted">No Image</span>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                    <h5 class="card-title mb-0">{{ item.title }}</h5>
+                    <span class="badge bg-secondary ms-2">{{ item.category }}</span>
+                </div>
+                <p class="card-text text-muted small mt-1">
+                    {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
+                </p>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <strong class="text-dark">₹{{ item.rate_per_day }}/day</strong>
+                    </div>
+                    <div class="text-muted small">
+                        Deposit: ₹{{ item.deposit }}
+                    </div>
+                </div>
+                <p class="text-muted small mt-1 mb-0">
+                    {{ item.min_days }}–{{ item.max_days }} days &nbsp;|&nbsp;
+                    By {{ item.lender.name }}
+                </p>
+            </div>
+            <div class="card-footer bg-white border-top-0">
+                <a href="{{ url_for('view_listing', listing_id=item.id) }}"
+                   class="btn btn-dark btn-sm w-100">View & Book</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="text-center mt-5">
+    <h4 class="text-muted">No items found.</h4>
+    {% if query or category %}
+        <a href="/" class="btn btn-outline-dark mt-2">Clear filters</a>
+    {% else %}
+        <a href="{{ url_for('new_listing') }}" class="btn btn-dark mt-3">
+            Be the first to list an item
+        </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

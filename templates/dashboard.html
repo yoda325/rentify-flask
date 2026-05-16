@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h3 class="mb-4">My Dashboard</h3>
+
+<!-- Lender Payout Info -->
+{% if pending_payout > 0 %}
+<div class="alert alert-success d-flex align-items-center mb-4">
+    <div>
+        <strong>₹{{ pending_payout }} will be credited to your account within 24 hours</strong>
+        <div class="small text-muted mt-1">
+            This is your net payout after platform fee deduction.
+            Total earned so far: ₹{{ total_earnings }}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-center p-3">
+            <div style="font-size:1.4rem; font-weight:600;">{{ stats.pending }}</div>
+            <div class="text-muted small">Pending</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center p-3">
+            <div style="font-size:1.4rem; font-weight:600;">{{ stats.approved }}</div>
+            <div class="text-muted small">Approved</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center p-3">
+            <div style="font-size:1.4rem; font-weight:600;">{{ stats.completed }}</div>
+            <div class="text-muted small">Completed</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center p-3 border-success">
+            <div style="font-size:1.4rem; font-weight:600; color:green;">
+                ₹{{ total_earnings }}
+            </div>
+            <div class="text-muted small">Total Earned</div>
+        </div>
+    </div>
+</div>
+
+<!-- Incoming Requests -->
+<h5 class="mb-3">Incoming Booking Requests</h5>
+{% if incoming %}
+<div class="table-responsive mb-4">
+<table class="table table-bordered align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Item</th><th>Borrower</th><th>Dates</th>
+            <th>They Pay</th><th>You Get</th><th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for booking in incoming %}
+    <tr>
+        <td>{{ booking.listing.title }}</td>
+        <td>{{ booking.borrower.name }}</td>
+        <td>{{ booking.start_date.strftime('%d %b') }} –
+            {{ booking.end_date.strftime('%d %b %Y') }}</td>
+        <td>₹{{ booking.total_cost }}</td>
+        <td class="text-success fw-bold">₹{{ booking.lender_payout }}</td>
+        <td>
+            <a href="{{ url_for('approve_booking', booking_id=booking.id) }}"
+               class="btn btn-success btn-sm">Approve</a>
+            <a href="{{ url_for('reject_booking', booking_id=booking.id) }}"
+               class="btn btn-danger btn-sm">Reject</a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted mb-4">No pending requests.</p>
+{% endif %}
+
+<!-- Items Currently Booked -->
+<h5 class="mb-3">Items Currently Booked</h5>
+{% if active_rentals %}
+<div class="table-responsive mb-4">
+<table class="table table-bordered align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Item</th><th>Borrower</th><th>Dates</th>
+            <th>You Get</th><th>Payment</th><th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for booking in active_rentals %}
+    <tr>
+        <td>{{ booking.listing.title }}</td>
+        <td>{{ booking.borrower.name }}</td>
+        <td>{{ booking.start_date.strftime('%d %b') }} –
+            {{ booking.end_date.strftime('%d %b %Y') }}</td>
+        <td class="text-success fw-bold">₹{{ booking.lender_payout }}</td>
+        <td>
+            {% if booking.payment_confirmed %}
+                <span class="badge bg-success">Paid ✓</span>
+            {% elif booking.payment_requested %}
+                <span class="badge bg-warning text-dark">Awaiting Payment</span>
+            {% else %}
+                <span class="badge bg-secondary">Not Requested</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if not booking.payment_requested and not booking.payment_confirmed %}
+            <a href="{{ url_for('request_payment', booking_id=booking.id) }}"
+               class="btn btn-dark btn-sm"
+               onclick="return confirm('Send payment request to borrower?')">
+               Request Payment
+            </a>
+            {% elif booking.payment_requested and not booking.payment_confirmed %}
+            <span class="text-muted small">Waiting for borrower...</span>
+            {% else %}
+            <div class="text-success small fw-bold">Payment received ✓</div>
+            <div class="text-muted small">
+                ₹{{ booking.lender_payout }} credited within 24hrs
+            </div>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted mb-4">No active rentals right now.</p>
+{% endif %}
+
+<!-- My Listings -->
+<h5 class="mb-3">My Listings</h5>
+{% if my_listings %}
+<div class="table-responsive mb-4">
+<table class="table table-bordered align-middle">
+    <thead class="table-dark">
+        <tr><th>Item</th><th>Rate</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for item in my_listings %}
+    <tr>
+        <td>{{ item.title }}</td>
+        <td>₹{{ item.rate_per_day }}/day</td>
+        <td>
+            {% if item.id in booked_listing_ids %}
+                <span class="badge bg-primary">Booked</span>
+            {% elif item.is_available %}
+                <span class="badge bg-success">Available</span>
+            {% else %}
+                <span class="badge bg-secondary">Unlisted</span>
+            {% endif %}
+        </td>
+        <td>
+            <a href="{{ url_for('edit_listing', listing_id=item.id) }}"
+               class="btn btn-outline-dark btn-sm">Edit</a>
+            <a href="{{ url_for('toggle_listing', listing_id=item.id) }}"
+               class="btn btn-outline-warning btn-sm"
+               onclick="return confirm('{{ 'Unlist' if item.is_available else 'Relist' }} this item?')">
+               {{ 'Unlist' if item.is_available else 'Relist' }}
+            </a>
+            <a href="{{ url_for('delete_listing', listing_id=item.id) }}"
+               class="btn btn-outline-danger btn-sm"
+               onclick="return confirm('Delete this listing permanently?')">
+               Delete
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted">No listings yet.
+    <a href="{{ url_for('new_listing') }}">List your first item</a>
+</p>
+{% endif %}
+
+<!-- My Bookings (Borrower view) -->
+<h5 class="mb-3">My Bookings</h5>
+{% if my_bookings %}
+<div class="table-responsive">
+<table class="table table-bordered align-middle">
+    <thead class="table-dark">
+        <tr><th>Item</th><th>Dates</th><th>Total</th><th>Status</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+    {% for booking in my_bookings %}
+    <tr>
+        <td>
+            <a href="{{ url_for('view_listing', listing_id=booking.listing.id) }}"
+               class="text-dark">{{ booking.listing.title }}</a>
+        </td>
+        <td>{{ booking.start_date.strftime('%d %b') }} –
+            {{ booking.end_date.strftime('%d %b %Y') }}</td>
+        <td>₹{{ booking.total_cost }}</td>
+        <td>
+            <span class="badge
+                {% if booking.status == 'pending' %}bg-warning text-dark
+                {% elif booking.status == 'approved' %}bg-primary
+                {% elif booking.status == 'active' %}bg-success
+                {% elif booking.status == 'cancelled' %}bg-danger
+                {% else %}bg-secondary{% endif %}">
+                {{ booking.status | capitalize }}
+            </span>
+            {% if booking.payment_requested and not booking.payment_confirmed %}
+                <span class="badge bg-danger ms-1">Pay Now!</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if booking.payment_requested and not booking.payment_confirmed %}
+            <a href="{{ url_for('pay_booking', booking_id=booking.id) }}"
+               class="btn btn-success btn-sm">Pay Now</a>
+            {% elif booking.status == 'pending' %}
+            <a href="{{ url_for('cancel_booking', booking_id=booking.id) }}"
+               class="btn btn-outline-danger btn-sm"
+               onclick="return confirm('Cancel this booking?')">Cancel</a>
+            {% elif booking.status == 'active' %}
+            <a href="{{ url_for('booking_confirmation', booking_id=booking.id) }}"
+               class="btn btn-outline-dark btn-sm">View Receipt</a>
+            {% else %}
+            <span class="text-muted small">—</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted">No bookings yet.
+    <a href="{{ url_for('home') }}">Browse items</a>
+</p>
+{% endif %}
+
+{% endblock %}

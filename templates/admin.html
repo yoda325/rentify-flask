@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Admin Panel</h3>
+    <span class="badge bg-dark fs-6">Platform Earned: ₹{{ total_platform_fee }}</span>
+</div>
+
+<!-- Step 1: Verify Payments -->
+<h5 class="mb-3">
+    <span class="badge bg-danger me-2">Step 1</span>
+    Verify Payments from Borrowers
+</h5>
+<p class="text-muted small mb-3">
+    Check your UPI ({{ config['PLATFORM_UPI_ID'] if config else '' }}) 
+    and confirm these payments are received.
+</p>
+
+{% if pending_verification %}
+<div class="table-responsive mb-4">
+<table class="table table-bordered align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Booking #</th><th>Item</th><th>Borrower</th>
+            <th>Amount Paid</th><th>Platform Fee</th><th>Lender Gets</th><th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for b in pending_verification %}
+    <tr>
+        <td>#{{ b.id }}</td>
+        <td>{{ b.listing.title }}</td>
+        <td>{{ b.borrower.name }}</td>
+        <td class="fw-bold">₹{{ b.total_cost }}</td>
+        <td class="text-warning fw-bold">₹{{ b.platform_fee }}</td>
+        <td class="text-success fw-bold">₹{{ b.lender_payout }}</td>
+        <td>
+            <a href="{{ url_for('admin_verify', booking_id=b.id) }}"
+               class="btn btn-success btn-sm"
+               onclick="return confirm('Confirm payment of ₹{{ b.total_cost }} received for Booking #{{ b.id }}?')">
+               ✓ Confirm Payment
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted mb-4">No payments pending verification.</p>
+{% endif %}
+
+<!-- Step 2: Release Payouts -->
+<h5 class="mb-3">
+    <span class="badge bg-warning text-dark me-2">Step 2</span>
+    Release Payouts to Lenders
+</h5>
+<p class="text-muted small mb-3">
+    Payment verified. Now send the lender their amount via UPI and mark as released.
+</p>
+
+{% if pending_payout %}
+<div class="table-responsive mb-4">
+<table class="table table-bordered align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Booking #</th><th>Item</th><th>Lender</th>
+            <th>Lender UPI</th><th>Send Amount</th><th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for b in pending_payout %}
+    <tr>
+        <td>#{{ b.id }}</td>
+        <td>{{ b.listing.title }}</td>
+        <td>{{ b.listing.lender.name }}</td>
+        <td>
+            {% if b.listing.lender.upi_id %}
+                <span class="badge bg-dark">{{ b.listing.lender.upi_id }}</span>
+                <a href="upi://pay?pa={{ b.listing.lender.upi_id }}&pn={{ b.listing.lender.name }}&am={{ b.lender_payout }}&tn=Rentify-Payout-{{ b.id }}"
+                   class="btn btn-outline-dark btn-sm ms-1">Pay via UPI</a>
+            {% else %}
+                <span class="text-danger small">No UPI added</span>
+            {% endif %}
+        </td>
+        <td class="text-success fw-bold">₹{{ b.lender_payout }}</td>
+        <td>
+            <a href="{{ url_for('admin_payout', booking_id=b.id) }}"
+               class="btn btn-primary btn-sm"
+               onclick="return confirm('Mark ₹{{ b.lender_payout }} as sent to {{ b.listing.lender.name }}?')">
+               ✓ Mark Payout Sent
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted mb-4">No payouts pending.</p>
+{% endif %}
+
+<!-- Completed -->
+<h5 class="mb-3">
+    <span class="badge bg-success me-2">Done</span>
+    Completed Transactions
+</h5>
+
+{% if completed %}
+<div class="table-responsive">
+<table class="table table-bordered align-middle table-sm">
+    <thead class="table-secondary">
+        <tr>
+            <th>Booking #</th><th>Item</th><th>Borrower</th>
+            <th>Lender</th><th>Total</th><th>Platform Fee</th><th>Lender Got</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for b in completed %}
+    <tr>
+        <td>#{{ b.id }}</td>
+        <td>{{ b.listing.title }}</td>
+        <td>{{ b.borrower.name }}</td>
+        <td>{{ b.listing.lender.name }}</td>
+        <td>₹{{ b.total_cost }}</td>
+        <td class="text-warning">₹{{ b.platform_fee }}</td>
+        <td class="text-success">₹{{ b.lender_payout }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted">No completed transactions yet.</p>
+{% endif %}
+
+{% endblock %}

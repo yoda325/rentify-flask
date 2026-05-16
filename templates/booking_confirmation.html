@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <div class="mb-4 mt-3">
+            <div style="font-size:4rem;">✅</div>
+            <h3 class="mt-2">Booking Confirmed!</h3>
+            <p class="text-muted">Show this screen to the lender when picking up the item.</p>
+        </div>
+
+        <div class="card shadow-sm mb-4 text-start">
+            <div class="card-header bg-success text-white fw-bold">
+                Receipt — Booking #{{ booking.id }}
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="ps-3">Item</td>
+                        <td><strong>{{ booking.listing.title }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3">Lender</td>
+                        <td>{{ booking.listing.lender.name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3">Pickup</td>
+                        <td>{{ booking.start_date.strftime('%d %B %Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3">Return by</td>
+                        <td>{{ booking.end_date.strftime('%d %B %Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3">Amount paid</td>
+                        <td>₹{{ booking.total_cost }}</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3">Deposit</td>
+                        <td>₹{{ booking.listing.deposit }}
+                            <span class="text-muted small">(refundable)</span>
+                        </td>
+                    </tr>
+                    <tr class="table-success">
+                        <td class="ps-3"><strong>Status</strong></td>
+                        <td><strong>ACTIVE ✓</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="alert alert-warning text-start small">
+            <strong>Remember:</strong><br>
+            — Return by <strong>{{ booking.end_date.strftime('%d %B %Y') }}</strong><br>
+            — Deposit of ₹{{ booking.listing.deposit }} refunded after safe return<br>
+            — Handle the item with care
+        </div>
+
+        <a href="{{ url_for('dashboard') }}" class="btn btn-dark w-100">
+            Go to Dashboard
+        </a>
+    </div>
+</div>
+
+{% endblock %}

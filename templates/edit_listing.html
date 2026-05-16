@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <h3 class="mb-4">Edit Listing</h3>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label">Item Title</label>
+                <input type="text" name="title" class="form-control"
+                       value="{{ listing.title }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control"
+                          rows="3" required>{{ listing.description }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-select" required>
+                    {% for cat in ['Electronics', 'Sports', 'Tools', 'Clothing', 'Books', 'Other'] %}
+                    <option value="{{ cat }}"
+                        {{ 'selected' if listing.category == cat }}>
+                        {{ cat }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="row">
+                <div class="col mb-3">
+                    <label class="form-label">Rate per Day (₹)</label>
+                    <input type="number" name="rate_per_day" class="form-control"
+                           value="{{ listing.rate_per_day }}" required>
+                </div>
+                <div class="col mb-3">
+                    <label class="form-label">Security Deposit (₹)</label>
+                    <input type="number" name="deposit" class="form-control"
+                           value="{{ listing.deposit }}" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col mb-3">
+                    <label class="form-label">Min Days</label>
+                    <input type="number" name="min_days" class="form-control"
+                           value="{{ listing.min_days }}" required>
+                </div>
+                <div class="col mb-3">
+                    <label class="form-label">Max Days</label>
+                    <input type="number" name="max_days" class="form-control"
+                           value="{{ listing.max_days }}" required>
+                </div>
+            </div>
+
+            {% if listing.image_file and listing.image_file != 'default.jpg' %}
+            <div class="mb-3">
+                <label class="form-label">Current Image</label><br>
+                <img src="{{ url_for('static', filename='uploads/' + listing.image_file) }}"
+                     style="height:120px; object-fit:cover; border-radius:8px;">
+            </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label">Upload New Image (optional)</label>
+                <input type="file" name="image" class="form-control" accept="image/*">
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-dark w-100">Save Changes</button>
+                <a href="{{ url_for('dashboard') }}"
+                   class="btn btn-outline-secondary w-100">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
