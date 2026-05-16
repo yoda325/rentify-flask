@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from flask_mail import Mail, Message
 import random
 from flask import Flask, render_template, redirect, url_for, request, flash
@@ -15,12 +17,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 # ── Email config ──
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_SERVER'] = 'smtp-relay.brevo.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'aryan.stark0325@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'upaegiooempqcmgy')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME', 'aryan.stark0325@gmail.com')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME', '')
 # ── Platform fee config ──
 PLATFORM_FEE_PERCENT = 10  # platform keeps 10% of rental amount
 PLATFORM_UPI_ID = "9955985803@axl"  # your personal UPI ID here
