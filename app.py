@@ -117,22 +117,19 @@ def register():
             'password': generate_password_hash(password)
         }
 
+        def send_async_email(app, msg):
+            with app.app_context():
+                try:
+                    mail.send(msg)
+                    app.logger.info('Email sent successfully')
+                except Exception as e:
+                    app.logger.error(f'Async mail error: {e}')
+
         try:
-            msg = Message('Rentify — Verify your email',
-                          recipients=[email])
+            msg = Message('Rentify — Verify your email', recipients=[email])
             msg.body = f'Hi {name},\n\nYour OTP is: {otp}\n\nDo not share it.\n\n— Team Rentify'
-
-def send_async_email(app, msg):
-    with app.app_context():
-        try:
-            mail.send(msg)
-            app.logger.info('Email sent successfully')
-        except Exception as e:
-            app.logger.error(f'Async mail error: {e}')
-
             thread = threading.Thread(target=send_async_email, args=(app, msg))
             thread.start()
-
             flash('OTP sent to your email. Please verify.')
             return redirect(url_for('verify_otp', email=email))
         except Exception as e:
