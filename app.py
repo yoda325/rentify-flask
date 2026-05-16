@@ -1,7 +1,8 @@
 import threading
 from dotenv import load_dotenv
 load_dotenv()
-from flask_mail import Mail, Message
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 import random
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -18,12 +19,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 # ── Email config ──
-app.config['MAIL_SERVER'] = 'smtp-relay.brevo.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_SENDER', 'aryan.stark0325@gmail.com')
+
 # ── Platform fee config ──
 PLATFORM_FEE_PERCENT = 10  # platform keeps 10% of rental amount
 PLATFORM_UPI_ID = "9955985803@axl"  # your personal UPI ID here
@@ -31,7 +27,7 @@ PLATFORM_NAME = "Rentify"
 ADMIN_EMAIL = "aryan.stark0325@gmail.com"
 
 db.init_app(app)
-mail = Mail(app)
+
 otp_store = {}   # DSA: hash map to store {email: otp}
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -117,18 +113,25 @@ def register():
             'password': generate_password_hash(password)
         }
 
-        def send_async_email(app, msg):
-            with app.app_context():
-                try:
-                    mail.send(msg)
-                    app.logger.info('Email sent successfully')
-                except Exception as e:
-                    app.logger.error(f'Async mail error: {e}')
+        def send_otp_email(name, email, otp):
+            configuration = sib_api_v3_sdk.Configuration()
+            configuration.api_key['api-key'] = BREVO_API_KEY
+            api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
+                sib_api_v3_sdk.ApiClient(configuration))
+            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                to=[{"email": email, "name": name}],
+                sender={"email": "aryan.stark0325@gmail.com", "name": "Rentify"},
+                subject="Rentify — Verify your email",
+                text_content=f'Hi {name},\n\nYour OTP is: {otp}\n\nDo not share it.\n\n— Team Rentify'
+            )
+            try:
+                api_instance.send_transac_email(send_smtp_email)
+                app.logger.info('Email sent successfully via Brevo API')
+            except ApiException as e:
+                app.logger.error(f'Brevo API error: {e}')
 
         try:
-            msg = Message('Rentify — Verify your email', recipients=[email])
-            msg.body = f'Hi {name},\n\nYour OTP is: {otp}\n\nDo not share it.\n\n— Team Rentify'
-            thread = threading.Thread(target=send_async_email, args=(app, msg))
+            thread = threading.Thread(target=send_otp_email, args=(name, email, otp))
             thread.start()
             flash('OTP sent to your email. Please verify.')
             return redirect(url_for('verify_otp', email=email))
